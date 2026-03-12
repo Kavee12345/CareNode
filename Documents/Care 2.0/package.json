@@ -1,0 +1,14 @@
+{
+  "name": "carenode-workspace",
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"cd carenode-backend && npm start\" \"cd carenode-frontend && npm run dev\""
+  },
+  "dependencies": {
+    "@google/genai": "^1.44.0",
+    "cors": "^2.8.6"
+  }
+}
