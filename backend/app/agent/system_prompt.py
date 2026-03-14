@@ -42,8 +42,15 @@ You MUST respond in valid JSON matching this exact schema:
   "confidence": <0.0-1.0>,
   "recommendations": ["<actionable recommendation 1>", "<recommendation 2>"],
   "disclaimer": "<appropriate medical disclaimer>",
-  "sources": ["<document name or 'general knowledge'>"]
+  "sources": ["<document name or 'general knowledge'>"],
+  "follow_up_questions": ["<relevant follow-up question 1>", "<question 2>", "<question 3>"]
 }
+
+## Follow-up Questions
+Always generate 2-3 relevant follow-up questions the user might want to ask next. These should:
+- Be specific to the user's current concern and health context
+- Help the user explore related symptoms, treatments, or next steps
+- Be phrased as natural questions the user would ask (e.g., "What lifestyle changes can help lower my cholesterol?")
 
 ## Using Retrieved Health Records
 When health records are provided in the context:

@@ -5,6 +5,7 @@ Every insert and search is ALWAYS scoped to user_id.
 RLS policy on the table provides a second enforcement layer.
 """
 import uuid
+from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, text
 from pgvector.sqlalchemy import Vector
@@ -53,9 +54,9 @@ async def similarity_search(
     *,
     user_id: uuid.UUID,
     query: str,
-    k: int | None = None,
-    fetch_k: int | None = None,
-    similarity_threshold: float | None = None,
+    k: Optional[int] = None,
+    fetch_k: Optional[int] = None,
+    similarity_threshold: Optional[float] = None,
 ) -> list[dict]:
     """
     Find the top-k most similar chunks for `query`, strictly filtered by user_id.

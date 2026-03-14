@@ -4,7 +4,7 @@ from jose import JWTError
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError, UnauthorizedError
+from app.core.exceptions import UnauthorizedError
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User

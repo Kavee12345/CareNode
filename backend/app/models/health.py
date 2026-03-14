@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, date
+from typing import Optional
 from sqlalchemy import String, DateTime, ForeignKey, func, Text, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -19,13 +20,13 @@ class HealthEvent(Base):
         String(50), nullable=False
     )  # symptom | lab_result | prescription | visit | vital | pattern_detected
     title: Mapped[str] = mapped_column(String(500), nullable=False)
-    description: Mapped[str | None] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(Text)
     event_date: Mapped[date] = mapped_column(Date, nullable=False)
-    severity: Mapped[str | None] = mapped_column(String(20))  # low | medium | high
-    source_doc_id: Mapped[uuid.UUID | None] = mapped_column(
+    severity: Mapped[Optional[str]] = mapped_column(String(20))  # low | medium | high
+    source_doc_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL")
     )
-    source_msg_id: Mapped[uuid.UUID | None] = mapped_column(
+    source_msg_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("messages.id", ondelete="SET NULL")
     )
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, default={})
@@ -47,16 +48,16 @@ class Prescription(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     medication_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    dosage: Mapped[str | None] = mapped_column(String(100))
-    frequency: Mapped[str | None] = mapped_column(String(100))
-    start_date: Mapped[date | None] = mapped_column(Date)
-    end_date: Mapped[date | None] = mapped_column(Date)
-    prescribing_doctor: Mapped[str | None] = mapped_column(String(255))
+    dosage: Mapped[Optional[str]] = mapped_column(String(100))
+    frequency: Mapped[Optional[str]] = mapped_column(String(100))
+    start_date: Mapped[Optional[date]] = mapped_column(Date)
+    end_date: Mapped[Optional[date]] = mapped_column(Date)
+    prescribing_doctor: Mapped[Optional[str]] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(20), default="active")  # active | completed | discontinued
-    source_doc_id: Mapped[uuid.UUID | None] = mapped_column(
+    source_doc_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL")
     )
-    notes: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[Optional[str]] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

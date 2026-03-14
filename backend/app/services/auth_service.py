@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -17,7 +18,7 @@ from app.config import settings
 
 
 async def register_user(
-    db: AsyncSession, email: str, password: str, full_name: str | None = None
+    db: AsyncSession, email: str, password: str, full_name: Optional[str] = None
 ) -> tuple[User, Agent]:
     """Create user + auto-provision their private agent."""
     # Check duplicate email

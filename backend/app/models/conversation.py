@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import List, Optional
 from sqlalchemy import String, DateTime, ForeignKey, func, Text, Float, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -18,7 +19,7 @@ class Conversation(Base):
     agent_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("agents.id", ondelete="CASCADE"), nullable=False
     )
-    title: Mapped[str | None] = mapped_column(String(500))
+    title: Mapped[Optional[str]] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -29,7 +30,7 @@ class Conversation(Base):
     # Relationships
     user: Mapped["User"] = relationship(back_populates="conversations")  # noqa: F821
     agent: Mapped["Agent"] = relationship(back_populates="conversations")  # noqa: F821
-    messages: Mapped[list["Message"]] = relationship(
+    messages: Mapped[List["Message"]] = relationship(
         back_populates="conversation",
         cascade="all, delete-orphan",
         order_by="Message.created_at",
@@ -55,14 +56,15 @@ class Message(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Structured assistant output (null for user messages)
-    escalation_level: Mapped[str | None] = mapped_column(
+    escalation_level: Mapped[Optional[str]] = mapped_column(
         String(20)
     )  # none | mild | urgent | emergency
-    confidence_score: Mapped[float | None] = mapped_column(Float)
-    recommendations: Mapped[list | None] = mapped_column(JSONB)
-    disclaimer: Mapped[str | None] = mapped_column(Text)
-    retrieved_chunk_ids: Mapped[list | None] = mapped_column(JSONB)
-    token_count: Mapped[int | None] = mapped_column(Integer)
+    confidence_score: Mapped[Optional[float]] = mapped_column(Float)
+    recommendations: Mapped[Optional[list]] = mapped_column(JSONB)
+    disclaimer: Mapped[Optional[str]] = mapped_column(Text)
+    follow_up_questions: Mapped[Optional[list]] = mapped_column(JSONB)
+    retrieved_chunk_ids: Mapped[Optional[list]] = mapped_column(JSONB)
+    token_count: Mapped[Optional[int]] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

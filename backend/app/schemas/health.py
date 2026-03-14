@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime, date
+from typing import Optional
 import uuid
 
 
@@ -7,9 +8,9 @@ class HealthEventOut(BaseModel):
     id: uuid.UUID
     event_type: str
     title: str
-    description: str | None
+    description: Optional[str]
     event_date: date
-    severity: str | None
+    severity: Optional[str]
     metadata_: dict = {}
     created_at: datetime
 
@@ -19,22 +20,22 @@ class HealthEventOut(BaseModel):
 class HealthEventCreate(BaseModel):
     event_type: str
     title: str
-    description: str | None = None
+    description: Optional[str] = None
     event_date: date
-    severity: str | None = None
+    severity: Optional[str] = None
     metadata_: dict = {}
 
 
 class PrescriptionOut(BaseModel):
     id: uuid.UUID
     medication_name: str
-    dosage: str | None
-    frequency: str | None
-    start_date: date | None
-    end_date: date | None
-    prescribing_doctor: str | None
+    dosage: Optional[str]
+    frequency: Optional[str]
+    start_date: Optional[date]
+    end_date: Optional[date]
+    prescribing_doctor: Optional[str]
     status: str
-    notes: str | None
+    notes: Optional[str]
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -42,31 +43,31 @@ class PrescriptionOut(BaseModel):
 
 class PrescriptionCreate(BaseModel):
     medication_name: str
-    dosage: str | None = None
-    frequency: str | None = None
-    start_date: date | None = None
-    end_date: date | None = None
-    prescribing_doctor: str | None = None
-    notes: str | None = None
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    prescribing_doctor: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class PrescriptionUpdate(BaseModel):
-    dosage: str | None = None
-    frequency: str | None = None
-    end_date: date | None = None
-    status: str | None = None
-    notes: str | None = None
+    dosage: Optional[str] = None
+    frequency: Optional[str] = None
+    end_date: Optional[date] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class AgentOut(BaseModel):
     id: uuid.UUID
     name: str
-    system_prompt_override: str | None
+    system_prompt_override: Optional[str]
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
 class AgentUpdate(BaseModel):
-    name: str | None = None
-    system_prompt_override: str | None = None
+    name: Optional[str] = None
+    system_prompt_override: Optional[str] = None

@@ -2,19 +2,31 @@
 Background task: OCR → Chunk → Embed → Store in pgvector.
 Runs as a FastAPI BackgroundTask (in-process, async).
 """
-import uuid
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
+import uuid
+from enum import Enum
+from pydoc import Doc
+from this import s
+from types import LambdaType
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import AsyncSessionLocal
+from app.models.common_types import DocumentType
 from app.models.document import Document
-from app.services.ocr_service import extract_text, detect_doc_type
 from app.services.chunking_service import chunk_text
 from app.services.embedding_service import embed_texts
+from app.services.ocr_service import extract_text
 from app.services.vector_service import store_chunks
-from app.db.session import AsyncSessionLocal
 
 
-async def process_document(document_id: uuid.UUID, user_id: uuid.UUID, agent_id: uuid.UUID) -> None:
+async def process_document(
+    document_type: DocumentType,
+    document_id: uuid.UUID,
+    user_id: uuid.UUID,
+    agent_id: uuid.UUID,
+) -> None:
     """
     Full OCR → chunk → embed pipeline for a single document.
     Called as a FastAPI BackgroundTask after upload.
@@ -38,10 +50,11 @@ async def process_document(document_id: uuid.UUID, user_id: uuid.UUID, agent_id:
 
             # Download raw file from MinIO
             from app.services.storage_service import download_file
+
             file_bytes = download_file(doc.minio_key)
 
             # Step 1: Extract text
-            text, page_count = extract_text(file_bytes, doc.mime_type)
+            text, page_count = extract_text(file_bytes, doc.mime_type, document_type)
             doc.extracted_text = text
             doc.page_count = page_count
 

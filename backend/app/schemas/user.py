@@ -1,14 +1,15 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, date
+from typing import Optional
 import uuid
 
 
 class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr
-    full_name: str | None
-    date_of_birth: date | None
-    gender: str | None
+    full_name: Optional[str]
+    date_of_birth: Optional[date]
+    gender: Optional[str]
     is_active: bool
     created_at: datetime
 
@@ -16,6 +17,6 @@ class UserOut(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    full_name: str | None = None
-    date_of_birth: date | None = None
-    gender: str | None = None
+    full_name: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = None

@@ -1,18 +1,20 @@
 import uuid
-from fastapi import APIRouter, Depends, UploadFile, File, BackgroundTasks, Query
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
 
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Query, UploadFile
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
 from app.db.session import get_db
 from app.dependencies import get_current_user
-from app.models.user import User
-from app.models.document import Document
 from app.models.agent import Agent
-from app.schemas.document import DocumentOut, DocumentListOut, DocumentUploadResponse
-from app.services.storage_service import upload_file, get_presigned_url, delete_file
+from app.models.document import Document
+from app.models.user import User
+from app.schemas.document import DocumentListOut, DocumentOut, DocumentUploadResponse
+from app.services.storage_service import delete_file, get_presigned_url, upload_file
 from app.tasks.document_processor import process_document
-from app.core.exceptions import NotFoundError, ValidationError, ForbiddenError
-from app.config import settings
+from app.models.common_types import DocumentType
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -29,6 +31,7 @@ ALLOWED_MIME_TYPES = {
 async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
+    document_type: DocumentType = Query(DocumentType.PRESCRIPTION),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -39,7 +42,9 @@ async def upload_document(
     file_bytes = await file.read()
     size_mb = len(file_bytes) / (1024 * 1024)
     if size_mb > settings.max_upload_size_mb:
-        raise ValidationError(f"File too large: {size_mb:.1f}MB > {settings.max_upload_size_mb}MB limit")
+        raise ValidationError(
+            f"File too large: {size_mb:.1f}MB > {settings.max_upload_size_mb}MB limit"
+        )
 
     # Get user's agent
     result = await db.execute(select(Agent).where(Agent.user_id == current_user.id))
@@ -52,13 +57,14 @@ async def upload_document(
     minio_key = f"users/{current_user.id}/{doc_id}/{file.filename}"
     upload_file(file_bytes, minio_key, file.content_type)
 
+    fileName = f"{doc_id}_{file.filename}"
     # Create DB record
     doc = Document(
         id=doc_id,
         user_id=current_user.id,
         agent_id=agent.id,
         filename=str(doc_id),
-        original_name=file.filename,
+        original_name=fileName,
         mime_type=file.content_type,
         file_size_bytes=len(file_bytes),
         minio_key=minio_key,
@@ -68,11 +74,13 @@ async def upload_document(
     await db.commit()
 
     # Queue background processing
-    background_tasks.add_task(process_document, doc_id, current_user.id, agent.id)
+    background_tasks.add_task(
+        process_document, document_type, doc_id, current_user.id, agent.id
+    )
 
     return DocumentUploadResponse(
         id=doc_id,
-        original_name=file.filename,
+        original_name=file.filename or str(doc_id),
         processing_status="pending",
         message="Document uploaded. Processing has started.",
     )
@@ -101,7 +109,9 @@ async def list_documents(
     )
     docs = result.scalars().all()
 
-    return DocumentListOut(items=list(docs), total=total, page=page, page_size=page_size)
+    return DocumentListOut(
+        items=list(docs), total=total, page=page, page_size=page_size
+    )
 
 
 @router.get("/{doc_id}", response_model=DocumentOut)
@@ -111,7 +121,9 @@ async def get_document(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Document).where(Document.id == doc_id, Document.user_id == current_user.id)
+        select(Document).where(
+            Document.id == doc_id, Document.user_id == current_user.id
+        )
     )
     doc = result.scalar_one_or_none()
     if not doc:
@@ -126,7 +138,9 @@ async def get_download_url(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Document).where(Document.id == doc_id, Document.user_id == current_user.id)
+        select(Document).where(
+            Document.id == doc_id, Document.user_id == current_user.id
+        )
     )
     doc = result.scalar_one_or_none()
     if not doc:
@@ -143,7 +157,9 @@ async def delete_document(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
-        select(Document).where(Document.id == doc_id, Document.user_id == current_user.id)
+        select(Document).where(
+            Document.id == doc_id, Document.user_id == current_user.id
+        )
     )
     doc = result.scalar_one_or_none()
     if not doc:

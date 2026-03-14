@@ -1,12 +1,13 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import Optional
 import uuid
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
-    full_name: str | None = None
+    full_name: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

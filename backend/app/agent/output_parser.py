@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Optional
 from app.schemas.chat import MedicalResponse
 
 
@@ -52,7 +53,7 @@ def parse_medical_response(raw_text: str, user_message: str = "") -> MedicalResp
     return MedicalResponse(**parsed)
 
 
-def _try_parse_json(text: str) -> dict | None:
+def _try_parse_json(text: str) -> Optional[dict]:
     """Try to extract and parse JSON from the response text."""
     # Direct parse
     try:

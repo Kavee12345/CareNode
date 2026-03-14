@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -19,9 +20,9 @@ router = APIRouter(prefix="/health", tags=["health"])
 
 @router.get("/timeline", response_model=list[HealthEventOut])
 async def get_timeline(
-    event_type: str | None = Query(None),
-    start_date: date | None = Query(None),
-    end_date: date | None = Query(None),
+    event_type: Optional[str] = Query(None),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -83,7 +84,7 @@ async def delete_health_event(
 
 @router.get("/prescriptions", response_model=list[PrescriptionOut])
 async def list_prescriptions(
-    status: str | None = Query(None),
+    status: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -161,7 +162,7 @@ async def send_message(
 
     async def event_stream():
         full_response = ""
-        final_data: MedicalResponse | None = None
+        final_data: Optional[MedicalResponse] = None
 
         async for chunk in stream_medical_agent(
             db,
@@ -193,6 +194,7 @@ async def send_message(
                 confidence_score=final_data.confidence,
                 recommendations=final_data.recommendations,
                 disclaimer=final_data.disclaimer,
+                follow_up_questions=final_data.follow_up_questions,
             )
             db.add(assistant_msg)
 
