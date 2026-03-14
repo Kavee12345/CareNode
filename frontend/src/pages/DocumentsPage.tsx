@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { FileText, Upload, Trash2, Download, RefreshCw, CheckCircle, Clock, XCircle, Loader } from 'lucide-react'
 import { documentsApi } from '../api/documents'
-import type { Document } from '../types'
+import type { Document, DocumentType } from '../types'
 import { format } from 'date-fns'
 import clsx from 'clsx'
 
@@ -14,17 +14,28 @@ const STATUS_CONFIG = {
 }
 
 const DOC_TYPE_LABELS: Record<string, string> = {
+  lab_reports: 'Lab Report',
   lab_report: 'Lab Report',
   prescription: 'Prescription',
   imaging: 'Imaging',
+  medical_record: 'Medical Record',
   other: 'Document',
 }
+
+const DOC_TYPE_OPTIONS: { value: DocumentType; label: string }[] = [
+  { value: 'lab_reports', label: 'Lab Report' },
+  { value: 'prescription', label: 'Prescription' },
+  { value: 'imaging', label: 'Imaging (X-Ray, MRI, CT)' },
+  { value: 'medical_record', label: 'Medical Record' },
+  { value: 'other', label: 'Other' },
+]
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [total, setTotal] = useState(0)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [selectedDocType, setSelectedDocType] = useState<DocumentType>('other')
 
   const load = async () => {
     const { data } = await documentsApi.list()
@@ -48,7 +59,7 @@ export default function DocumentsPage() {
     setUploadError('')
     for (const file of acceptedFiles) {
       try {
-        await documentsApi.upload(file)
+        await documentsApi.upload(file, selectedDocType)
       } catch (err: unknown) {
         const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
         setUploadError(msg || `Failed to upload ${file.name}`)
@@ -56,7 +67,7 @@ export default function DocumentsPage() {
     }
     setUploading(false)
     load()
-  }, [])
+  }, [selectedDocType])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -92,6 +103,20 @@ export default function DocumentsPage() {
         <button onClick={load} className="btn-secondary flex items-center gap-2 text-sm">
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
+      </div>
+
+      {/* Document type selector */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Document type</label>
+        <select
+          value={selectedDocType}
+          onChange={(e) => setSelectedDocType(e.target.value as DocumentType)}
+          className="input w-64"
+        >
+          {DOC_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Drop zone */}

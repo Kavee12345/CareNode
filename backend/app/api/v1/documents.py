@@ -9,12 +9,12 @@ from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
 from app.db.session import get_db
 from app.dependencies import get_current_user
 from app.models.agent import Agent
+from app.models.common_types import DocumentType
 from app.models.document import Document
 from app.models.user import User
 from app.schemas.document import DocumentListOut, DocumentOut, DocumentUploadResponse
 from app.services.storage_service import delete_file, get_presigned_url, upload_file
 from app.tasks.document_processor import process_document
-from app.models.common_types import DocumentType
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -57,7 +57,7 @@ async def upload_document(
     minio_key = f"users/{current_user.id}/{doc_id}/{file.filename}"
     upload_file(file_bytes, minio_key, file.content_type)
 
-    fileName = f"{doc_id}_{file.filename}"
+    fileName = f"{doc_id}_{document_type}_{file.filename}"
     # Create DB record
     doc = Document(
         id=doc_id,

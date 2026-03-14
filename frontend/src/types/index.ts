@@ -44,6 +44,7 @@ export interface Message {
   confidence_score: number | null
   recommendations: string[] | null
   disclaimer: string | null
+  follow_up_questions: string[] | null
   created_at: string
 }
 
@@ -65,6 +66,15 @@ export interface MedicalResponse {
   recommendations: string[]
   disclaimer: string
   sources: string[]
+  follow_up_questions: string[]
+}
+
+export type DocumentType = 'lab_reports' | 'prescription' | 'imaging' | 'medical_record' | 'other'
+
+export interface VoiceResponse {
+  transcript: string
+  response: MedicalResponse
+  audio_base64: string
 }
 
 export interface HealthEvent {

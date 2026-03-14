@@ -4,10 +4,6 @@ Runs as a FastAPI BackgroundTask (in-process, async).
 """
 
 import uuid
-from enum import Enum
-from pydoc import Doc
-from this import s
-from types import LambdaType
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +13,7 @@ from app.models.common_types import DocumentType
 from app.models.document import Document
 from app.services.chunking_service import chunk_text
 from app.services.embedding_service import embed_texts
-from app.services.ocr_service import extract_text
+from app.services.ocr_service import detect_doc_type, extract_text
 from app.services.vector_service import store_chunks
 
 

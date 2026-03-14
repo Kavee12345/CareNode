@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
@@ -10,7 +11,7 @@ from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.agent import Agent
 from app.models.conversation import Conversation, Message
-from app.models.health import HealthEvent
+from app.models.health import HealthEvent, UserHealthNote
 from app.schemas.chat import (
     ConversationOut, ConversationListOut, ConversationDetailOut,
     MessageOut, ChatRequest, MedicalResponse,
@@ -20,6 +21,46 @@ from app.core.exceptions import NotFoundError
 from datetime import date, datetime, timezone
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+# Keywords that indicate the user is sharing health-relevant info
+HEALTH_NOTE_INDICATORS = {
+    "symptom": [
+        "i have", "i feel", "i'm feeling", "i am feeling", "my head",
+        "pain in", "hurts", "aching", "nausea", "dizzy", "tired",
+        "fatigue", "can't sleep", "insomnia", "fever", "cough",
+        "breathing", "swelling", "rash", "itching", "bleeding",
+    ],
+    "medication": [
+        "i take", "i'm taking", "i am taking", "prescribed",
+        "medication", "medicine", "supplement", "vitamin", "dose",
+        "stopped taking", "started taking",
+    ],
+    "lifestyle": [
+        "i exercise", "i don't exercise", "i smoke", "i drink",
+        "my diet", "i eat", "i sleep", "hours of sleep",
+        "stress", "i work", "sedentary",
+    ],
+    "allergy": [
+        "allergic", "allergy", "react to", "intolerant",
+    ],
+    "condition": [
+        "diagnosed with", "i have diabetes", "i have hypertension",
+        "i have asthma", "history of", "chronic", "condition",
+    ],
+}
+
+
+def _detect_health_note_category(text: str) -> Optional[str]:
+    """Check if user message contains health-relevant info worth saving."""
+    text_lower = text.lower()
+    # Skip very short messages or greetings
+    if len(text_lower.split()) < 4:
+        return None
+    for category, keywords in HEALTH_NOTE_INDICATORS.items():
+        for kw in keywords:
+            if kw in text_lower:
+                return category
+    return None
 
 
 async def _get_user_agent(db: AsyncSession, user_id: uuid.UUID) -> Agent:
@@ -144,6 +185,19 @@ async def send_message(
     )
     db.add(user_msg)
     await db.commit()
+    await db.refresh(user_msg)
+
+    # Save health note if user shared health-relevant info
+    note_category = _detect_health_note_category(body.message)
+    if note_category:
+        health_note = UserHealthNote(
+            user_id=current_user.id,
+            category=note_category,
+            note=body.message.strip(),
+            source_message_id=user_msg.id,
+        )
+        db.add(health_note)
+        await db.commit()
 
     # Update conversation title from first user message
     if conv.title == "New Conversation":
@@ -161,7 +215,6 @@ async def send_message(
     history_out = [MessageOut.model_validate(m) for m in history_msgs[:-1]]  # exclude current msg
 
     async def event_stream():
-        full_response = ""
         final_data: Optional[MedicalResponse] = None
 
         async for chunk in stream_medical_agent(
@@ -171,16 +224,11 @@ async def send_message(
             conversation_history=history_out,
         ):
             if chunk.startswith("data: [DONE]"):
-                import json
                 json_str = chunk[len("data: [DONE]"):].strip()
                 try:
                     final_data = MedicalResponse(**json.loads(json_str))
                 except Exception:
                     pass
-            else:
-                # Extract text from SSE chunk
-                text_part = chunk.replace("data: ", "").strip()
-                full_response += text_part
             yield chunk
 
         # Persist assistant message

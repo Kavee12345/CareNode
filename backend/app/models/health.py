@@ -38,6 +38,35 @@ class HealthEvent(Base):
     user: Mapped["User"] = relationship(back_populates="health_events")  # noqa: F821
 
 
+class UserHealthNote(Base):
+    """Stores key health info reported by the user during conversations
+    (symptoms, lifestyle, medication adherence, etc.) for future reference."""
+    __tablename__ = "user_health_notes"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    category: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # symptom | lifestyle | medication | allergy | condition | other
+    note: Mapped[str] = mapped_column(Text, nullable=False)
+    source_message_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("messages.id", ondelete="SET NULL")
+    )
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship()  # noqa: F821
+
+
 class Prescription(Base):
     __tablename__ = "prescriptions"
 

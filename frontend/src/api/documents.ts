@@ -1,11 +1,11 @@
 import apiClient from './client'
-import type { Document, DocumentList } from '../types'
+import type { Document, DocumentList, DocumentType } from '../types'
 
 export const documentsApi = {
-  upload: (file: File) => {
+  upload: (file: File, documentType: DocumentType = 'other') => {
     const form = new FormData()
     form.append('file', file)
-    return apiClient.post('/documents/upload', form, {
+    return apiClient.post(`/documents/upload?document_type=${documentType}`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },

@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 50
     allowed_extensions: list[str] = ["pdf", "png", "jpg", "jpeg", "txt", "docx"]
 
+    # Voice (STT + TTS)
+    stt_language: str = "en-US"
+    tts_language: str = "en"
+    voice_max_audio_size_mb: int = 10
+
     # RAG
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64
