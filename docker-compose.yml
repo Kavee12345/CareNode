@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: medagent_postgres
+    environment:
+      POSTGRES_USER: medagent
+      POSTGRES_PASSWORD: medagent_secret
+      POSTGRES_DB: medagent_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medagent -d medagent_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medagent_network
+
+  minio:
+    image: minio/minio:latest
+    container_name: medagent_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: medagent_minio
+      MINIO_ROOT_PASSWORD: medagent_minio_secret
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medagent_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medagent_backend
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - medagent_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medagent_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - medagent_network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  medagent_network:
+    driver: bridge
